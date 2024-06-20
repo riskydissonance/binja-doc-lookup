@@ -104,7 +104,8 @@ def action_token_tooltip(action_context):
             elements = tree.xpath(xpath)
             if elements:
                 content += elements[0].text_content() + "\n\n"
-
+        if not content.strip():
+            content = "No info found"
         execute_on_main_thread(lambda: show_tooltip_popup(ctx.mainWindow(), QCursor.pos(), content))
 
     else:

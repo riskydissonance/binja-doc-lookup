@@ -7,6 +7,8 @@ Lookup a documentation summary for the selected token using `Ctrl-q`, or open th
 
 By default, MSDN is searched for the current highlighted search term, but the query URL and tooltip content can be configured in the settings.
 
+Thanks to @psifertex and @fuzyll for the help with the tooltip.
+
 ## Minimum Version
 
 5529

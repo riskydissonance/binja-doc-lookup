@@ -2,10 +2,50 @@ import requests
 from urllib.parse import unquote
 from lxml import html
 
+from binaryninja import execute_on_main_thread
 from binaryninja.settings import Settings
-from binaryninjaui import UIAction, UIActionHandler
+from binaryninjaui import UIAction, UIActionHandler, UIContext
 from PySide6.QtGui import QDesktopServices, QKeySequence, Qt, QCursor
-from PySide6.QtWidgets import QToolTip
+from PySide6.QtWidgets import QWidget, QLabel, QVBoxLayout
+
+
+class TooltipPopup(QWidget):
+    def __init__(self, content, parent=None):
+        super().__init__(parent, Qt.Window | Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
+        self.setFocusPolicy(Qt.StrongFocus)
+        self.setWindowTitle("Doc Lookup")
+
+        layout = QVBoxLayout()
+        label = QLabel(content)
+        layout.addWidget(label)
+
+        self.setLayout(layout)
+        self.adjustSize()
+
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Escape:
+            self.close()
+            event.accept()
+        else:
+            super().keyPressEvent(event)
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        self.raise_()
+        self.activateWindow()
+        self.setFocus()
+
+    def focusOutEvent(self, event):
+        self.close()
+        super().focusOutEvent(event)
+
+
+def show_tooltip_popup(parent, pos, content):
+    tooltip_popup = TooltipPopup(content, parent)
+    tooltip_popup.move(pos)
+    tooltip_popup.show()
+    parent.tooltip_popup = tooltip_popup
+
 
 def register_settings():
     Settings().register_group("doc_lookup", "Binja Doc Lookup")
@@ -43,7 +83,7 @@ def register_settings():
 
 
 def action_token_tooltip(action_context):
-    cursor_pos = QCursor.pos()
+    ctx = UIContext.allContexts()[0]
     headers = {
         'User-Agent': Settings().get_string('doc_lookup.user_agent'),
     }
@@ -64,9 +104,11 @@ def action_token_tooltip(action_context):
             elements = tree.xpath(xpath)
             if elements:
                 content += elements[0].text_content() + "\n\n"
-        QToolTip.showText(cursor_pos, content)
+
+        execute_on_main_thread(lambda: show_tooltip_popup(ctx.mainWindow(), QCursor.pos(), content))
+
     else:
-        QToolTip.showText(cursor_pos, f"Error: {response.status_code}")
+        execute_on_main_thread(lambda: show_tooltip_popup(ctx.mainWindow(), QCursor.pos(), f"Error: {response.status_code}"))
 
 
 def action_lookup_token(action_context):

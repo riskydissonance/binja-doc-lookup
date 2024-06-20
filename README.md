@@ -1,5 +1,5 @@
 # Binja Doc Lookup
-Author: Rob Bone (LRQA Nettitude)
+Author: RiskyDissonance
 
 ## Description:
 
